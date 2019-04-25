@@ -1,0 +1,17 @@
+CREATE TABLE buyingStock (
+    date DATE, 
+    stock VARCHAR(20), 
+    quantity INTEGER, 
+    value FLOAT, 
+    totalValue FLOAT, 
+    totalValuePaid FLOAT
+);
+
+CREATE TABLE sellingStock (
+    date DATE, 
+    stock VARCHAR(20), 
+    quantity INTEGER, 
+    value FLOAT, 
+    totalValue FLOAT, 
+    totalValueReceived FLOAT
+);
