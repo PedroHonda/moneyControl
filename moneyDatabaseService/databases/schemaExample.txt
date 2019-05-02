@@ -15,3 +15,10 @@ CREATE TABLE sellingStock (
     totalValue FLOAT, 
     totalValueReceived FLOAT
 );
+
+CREATE TABLE currentStock (
+    stock VARCHAR(20),
+    quantity INTEGER,
+    meanValue FLOAT,
+    totalValue FLOAT
+);
