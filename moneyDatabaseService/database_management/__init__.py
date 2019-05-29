@@ -1,8 +1,7 @@
 import os
 import sqlite3
-import json
 import datetime
-from flask import Flask, request, g, jsonify
+from flask import Flask, request, g
 from flask_restful import Resource, Api, reqparse
 from flask_cors import CORS
 
@@ -81,14 +80,37 @@ class BuyingStock(Resource):
         db = get_db()
         cursor = db.cursor()
 
-        values = []
-
-        for key in args:
-            values.append(args[key])
+        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValuePaid']]
 
         sqlCmd = "insert into buyingStock(date, stock, quantity, value, totalValue, totalValuePaid) values (?,?,?,?,?,?)"
         cursor.execute(sqlCmd, values)
         db.commit()
+
+        cursor.execute("select quantity,meanValue,totalValue from currentStock where stock = '" + args['stock'] + "';")
+        currentStockInfo = cursor.fetchall()
+            # currentQuantity = currentStockInfo[0]
+            # currentMeanValue = currentStockInfo[1]
+            # currentTotalValue = currentStockInfo[2]
+
+        # If the stock is currently available on currentStock table
+        if currentStockInfo:
+            currentStockInfo = list(currentStockInfo[0])
+            currentStockInfo[1] = (currentStockInfo[2] + args['totalValuePaid']) / (currentStockInfo[0] + args['quantity'])
+            currentStockInfo[0] += args['quantity']
+            currentStockInfo[2] += args['totalValuePaid']
+            currentStockInfo.append(args['stock'])
+
+            # keep meanValue with only 3 decimal points
+            sqlCmd = "update currentStock set quantity = ?, meanValue = ?, totalValue = ? where stock = ?;"
+            cursor.execute(sqlCmd, currentStockInfo)
+            db.commit()
+        # If the stock is not currently available on currentStock table (new purchase)
+        else:
+            sqlCmd = "insert into currentStock(stock, quantity, meanValue, totalValue) values (?,?,?,?)"
+            currentStockInfo = [args['stock'], args['quantity'], args['totalValuePaid'] / args['quantity'], args['totalValuePaid']]
+            cursor.execute(sqlCmd, currentStockInfo)
+            db.commit()
+
         return args, 200
 
     def put(self):
@@ -145,10 +167,7 @@ class SellingStock(Resource):
         db = get_db()
         cursor = db.cursor()
 
-        values = []
-
-        for key in args:
-            values.append(args[key])
+        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValueReceived']]
 
         sqlCmd = "insert into sellingStock(date, stock, quantity, value, totalValue, totalValueReceived) values (?,?,?,?,?,?)"
         cursor.execute(sqlCmd, values)
