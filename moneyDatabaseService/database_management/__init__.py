@@ -35,8 +35,15 @@ class Home(Resource):
         for t in cursor.fetchall():
             cursor.execute("select * from " + t[1] + ";")
             data = cursor.fetchall()
-            tables[t[1]] = data
-        
+            # fixing datetime issue
+            dataList = []
+            for i in data:
+                i = list(i)
+                for index,j in enumerate(i):
+                    if isinstance(j, datetime.date):
+                        i[index] = str(j)
+                dataList.append(i)
+            tables[t[1]] = dataList
         return tables, 200
 
 class BuyingStock(Resource):
@@ -81,7 +88,6 @@ class BuyingStock(Resource):
         cursor = db.cursor()
 
         values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValuePaid']]
-
         sqlCmd = "insert into buyingStock(date, stock, quantity, value, totalValue, totalValuePaid) values (?,?,?,?,?,?)"
         cursor.execute(sqlCmd, values)
         db.commit()
@@ -175,11 +181,33 @@ class SellingStock(Resource):
         db = get_db()
         cursor = db.cursor()
 
-        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValueReceived']]
+        cursor.execute("select quantity,meanValue,totalValue from currentStock where stock = '" + args['stock'] + "';")
+        currentStockInfo = cursor.fetchall()
+            # currentQuantity = currentStockInfo[0]
+            # currentMeanValue = currentStockInfo[1]
+            # currentTotalValue = currentStockInfo[2]
 
+        # If the stock is currently available on currentStock table
+        if currentStockInfo:
+            currentStockInfo = list(currentStockInfo[0])
+            # mean Value unchanged
+            currentStockInfo[0] -= args['quantity']
+            currentStockInfo[2] -= args['quantity']*currentStockInfo[1]
+            currentStockInfo.append(args['stock'])
+
+            # keep meanValue with only 3 decimal points
+            sqlCmd = "update currentStock set quantity = ?, meanValue = ?, totalValue = ? where stock = ?;"
+            cursor.execute(sqlCmd, currentStockInfo)
+            db.commit()
+        # If the stock is not currently available on currentStock table (new purchase)
+        else:
+            return "Stock not available on currentStock table! Not Found!", 404
+
+        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValueReceived']]
         sqlCmd = "insert into sellingStock(date, stock, quantity, value, totalValue, totalValueReceived) values (?,?,?,?,?,?)"
         cursor.execute(sqlCmd, values)
         db.commit()
+
         return args, 200
 
     def put(self):
@@ -220,7 +248,17 @@ class CurrentStock(Resource):
 
         return "Success!", 200
 
+class CurrentStockPerCode(Resource):
+    def get(self, stockCode):
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("select * from currentStock where stock = '" + stockCode + "';")
+        data = cursor.fetchall()
+        
+        return data, 200
+
 api.add_resource(Home, '/')
 api.add_resource(BuyingStock, '/buy')
 api.add_resource(SellingStock, '/sell')
 api.add_resource(CurrentStock, '/current')
+api.add_resource(CurrentStockPerCode, '/current/<string:stockCode>')
