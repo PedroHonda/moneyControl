@@ -126,6 +126,14 @@ class BuyingStock(Resource):
 
         return args, 200
 
+    def delete(self):
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("delete from buyingStock;")
+        db.commit()
+
+        return "Success!", 200
+
 class SellingStock(Resource):
     def get(self):
         db = get_db()
@@ -187,6 +195,14 @@ class SellingStock(Resource):
 
         return args, 200
 
+    def delete(self):
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("delete from sellingStock;")
+        db.commit()
+
+        return "Success!", 200
+
 class CurrentStock(Resource):
     def get(self):
         db = get_db()
@@ -195,6 +211,14 @@ class CurrentStock(Resource):
         data = cursor.fetchall()
         
         return data, 200
+
+    def delete(self):
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("delete from currentStock;")
+        db.commit()
+
+        return "Success!", 200
 
 api.add_resource(Home, '/')
 api.add_resource(BuyingStock, '/buy')
