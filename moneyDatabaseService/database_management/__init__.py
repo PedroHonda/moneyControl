@@ -47,6 +47,15 @@ class Home(Resource):
         return tables, 200
 
 class BuyingStock(Resource):
+    badInput = {"Bad Input! Follow the example..." : {
+                    "date" : "2019-05-28",
+                    "stock" : "ITUB4",
+                    "quantity" : 100,
+                    "value" : 34.08,
+                    "totalValue" : 3408.00,
+                    "totalValuePaid" : 3409.20
+                }}
+    
     def get(self):
         db = get_db()
         cursor = db.cursor()
@@ -75,19 +84,18 @@ class BuyingStock(Resource):
         try:
             args = parser.parse_args()      
         except:
-            return {"Bad Input! Follow the example..." : {
-                    "date" : "2019-05-28",
-                    "stock" : "ITUB4",
-                    "quantity" : 100,
-                    "value" : 34.08,
-                    "totalValue" : 3408.00,
-                    "totalValuePaid" : 3409.20
-                }}, 400
+            return self.badInput, 400
+
+        args['date'] = args['date'].replace('/', '-')
+
+        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValuePaid']]
+        for v in values:
+            if not v:
+                return self.badInput, 400
 
         db = get_db()
         cursor = db.cursor()
 
-        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValuePaid']]
         sqlCmd = "insert into buyingStock(date, stock, quantity, value, totalValue, totalValuePaid) values (?,?,?,?,?,?)"
         cursor.execute(sqlCmd, values)
         db.commit()
@@ -106,7 +114,6 @@ class BuyingStock(Resource):
             currentStockInfo[2] += args['totalValuePaid']
             currentStockInfo.append(args['stock'])
 
-            # keep meanValue with only 3 decimal points
             sqlCmd = "update currentStock set quantity = ?, meanValue = ?, totalValue = ? where stock = ?;"
             cursor.execute(sqlCmd, currentStockInfo)
             db.commit()
@@ -128,7 +135,57 @@ class BuyingStock(Resource):
         parser.add_argument('totalValue', type=float, help='Total Value must be a Float')
         parser.add_argument('totalValuePaid', type=float, help='Total Value Paid must be a Float')
         parser.add_argument('rowId', type=int, help='RowId Received must be a Int')
-        args = parser.parse_args()
+        try:
+            args = parser.parse_args()      
+        except:
+            return {"Bad Input! Follow the example..." : {
+                    "date" : "2019-05-28",
+                    "stock" : "ITUB4",
+                    "quantity" : 100,
+                    "value" : 34.08,
+                    "totalValue" : 3408.00,
+                    "totalValuePaid" : 3409.20,
+                    "rowId" : 4
+                }}, 400
+        if args['date']:
+            args['date'] = args['date'].replace('/', '-')
+        rowId = args['rowId']
+        if not rowId:
+            return 'Please provide a rowId number to update the values', 400
+        # Deleting arguments which were not changed
+        args = {key:value for key,value in args.items() if args[key]}
+
+        db = get_db()
+        cursor = db.cursor()
+
+        values = []
+        sqlUPDATE = "update buyingStock set "
+        for key in args:
+            sqlUPDATE += key + " = ? , "
+            values.append(args[key])
+        sqlUPDATE = sqlUPDATE[:-2] + " where rowId = ? ;"
+        values.append(rowId)
+        cursor.execute(sqlUPDATE, values)
+        db.commit()
+
+        # we also need to correctly recalculate the currentStock table's values (quantity, meanValue and totalValue) as well
+        cursor.execute("select stock from buyingStock where rowId = ? ;", [rowId])
+        stockCode = cursor.fetchall()[0][0]
+
+        cursor.execute("select * from buyingStock where stock = '" + stockCode + "';")
+        allBuying = cursor.fetchall()
+
+        quantity = 0
+        totalValue = 0
+        for operation in allBuying:
+            quantity += operation[2]
+            totalValue += operation[5]
+            meanValue = totalValue / quantity
+    
+        sqlCmd = "update currentStock set quantity = ?, meanValue = ?, totalValue = ? where stock = ?;"
+        currentStockInfo = [quantity, meanValue, totalValue, stockCode]
+        cursor.execute(sqlCmd, currentStockInfo)
+        db.commit()
 
         return args, 200
 
@@ -141,6 +198,15 @@ class BuyingStock(Resource):
         return "Success!", 200
 
 class SellingStock(Resource):
+    badInput = {"Bad Input! Follow the example..." : {
+                    "date" : "2019-05-28",
+                    "stock" : "ITUB4",
+                    "quantity" : 100,
+                    "value" : 34.08,
+                    "totalValue" : 3408.00,
+                    "totalValueReceived" : 3409.20
+                }}
+
     def get(self):
         db = get_db()
         cursor = db.cursor()
@@ -169,17 +235,20 @@ class SellingStock(Resource):
         try:
             args = parser.parse_args()      
         except:
-            return {"Bad Input! Follow the example..." : {
-                    "date" : "2019-05-28",
-                    "stock" : "ITUB4",
-                    "quantity" : 100,
-                    "value" : 34.08,
-                    "totalValue" : 3408.00,
-                    "totalValueReceived" : 3409.20
-                }}, 400
+            return self.badInput, 400
+
+        args['date'] = args['date'].replace('/', '-')
+
+        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValueReceived']]
+        for v in values:
+            if not v:
+                return self.badInput, 400
 
         db = get_db()
         cursor = db.cursor()
+
+        # seems that date with "slash format" (209/05/28) is not well received by SQL, so I am converting it by force here
+        args['date'] = args['date'].replace('/', '-')
 
         cursor.execute("select quantity,meanValue,totalValue from currentStock where stock = '" + args['stock'] + "';")
         currentStockInfo = cursor.fetchall()
@@ -195,7 +264,6 @@ class SellingStock(Resource):
             currentStockInfo[2] -= args['quantity']*currentStockInfo[1]
             currentStockInfo.append(args['stock'])
 
-            # keep meanValue with only 3 decimal points
             sqlCmd = "update currentStock set quantity = ?, meanValue = ?, totalValue = ? where stock = ?;"
             cursor.execute(sqlCmd, currentStockInfo)
             db.commit()
@@ -203,7 +271,7 @@ class SellingStock(Resource):
         else:
             return "Stock not available on currentStock table! Not Found!", 404
 
-        values = [args['date'], args['stock'], args['quantity'], args['value'], args['totalValue'], args['totalValueReceived']]
+
         sqlCmd = "insert into sellingStock(date, stock, quantity, value, totalValue, totalValueReceived) values (?,?,?,?,?,?)"
         cursor.execute(sqlCmd, values)
         db.commit()
@@ -219,7 +287,70 @@ class SellingStock(Resource):
         parser.add_argument('totalValue', type=float, help='Total Value must be a Float')
         parser.add_argument('totalValueReceived', type=float, help='Total Value Received must be a Float')
         parser.add_argument('rowId', type=int, help='RowId Received must be a Int')
-        args = parser.parse_args()
+        try:
+            args = parser.parse_args()      
+        except:
+            return {"Bad Input! Follow the example..." : {
+                    "date" : "2019-05-28",
+                    "stock" : "ITUB4",
+                    "quantity" : 100,
+                    "value" : 34.08,
+                    "totalValue" : 3408.00,
+                    "totalValueReceived" : 3409.20,
+                    "rowId" : 4
+                }}, 400
+
+        if args['date']:
+            args['date'] = args['date'].replace('/', '-')
+        rowId = args['rowId']
+        if not rowId:
+            return 'Please provide a rowId number to update the values', 400
+        # Deleting arguments which were not changed
+        args = {key:value for key,value in args.items() if args[key]}
+
+        db = get_db()
+        cursor = db.cursor()
+
+        values = []
+        sqlUPDATE = "update sellingStock set "
+        for key in args:
+            sqlUPDATE += key + " = ? , "
+            values.append(args[key])
+        sqlUPDATE = sqlUPDATE[:-2] + " where rowId = ? ;"
+        values.append(rowId)
+        cursor.execute(sqlUPDATE, values)
+        db.commit()
+
+        # we also need to correctly recalculate the currentStock table's values (quantity, meanValue and totalValue) as well
+        cursor.execute("select stock from sellingStock where rowId = ? ;", [rowId])
+        stockCode = cursor.fetchall()[0][0]
+
+        cursor.execute("select * from sellingStock where stock = '" + stockCode + "';")
+        allSelling = cursor.fetchall()
+
+        cursor.execute("select * from buyingStock where stock = '" + stockCode + "';")
+        allBuying = cursor.fetchall()
+
+        # for selling operation, only quantity matters when updating currentStock table
+        # first get from buyingStock the total quantity available there
+        quantity = 0
+        for operation in allBuying:
+            quantity += operation[2]
+        # then subtract the quantity available after selingStock table was updated
+        for operation in allSelling:
+            quantity -= operation[2]
+    
+        # get current meanValue available on currentStock table
+        cursor.execute("select meanValue from currentStock where stock = '" + stockCode + "';")
+        meanValue = cursor.fetchall()[0][0]
+
+        # totalValue is then the meanValue with the new value of quantity
+        totalValue = meanValue * quantity
+
+        sqlCmd = "update currentStock set quantity = ?, meanValue = ?, totalValue = ? where stock = ?;"
+        currentStockInfo = [quantity, meanValue, totalValue, stockCode]
+        cursor.execute(sqlCmd, currentStockInfo)
+        db.commit()
 
         return args, 200
 
@@ -248,7 +379,25 @@ class CurrentStock(Resource):
 
         return "Success!", 200
 
-class CurrentStockPerCode(Resource):
+class getBuyingStockPerCode(Resource):
+    def get(self, stockCode):
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("select * from buyingStock where stock = '" + stockCode + "';")
+        data = cursor.fetchall()
+        
+        return data, 200
+
+class getSellingStockPerCode(Resource):
+    def get(self, stockCode):
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("select * from sellingStock where stock = '" + stockCode + "';")
+        data = cursor.fetchall()
+        
+        return data, 200
+
+class getCurrentStockPerCode(Resource):
     def get(self, stockCode):
         db = get_db()
         cursor = db.cursor()
@@ -261,4 +410,6 @@ api.add_resource(Home, '/')
 api.add_resource(BuyingStock, '/buy')
 api.add_resource(SellingStock, '/sell')
 api.add_resource(CurrentStock, '/current')
-api.add_resource(CurrentStockPerCode, '/current/<string:stockCode>')
+api.add_resource(getBuyingStockPerCode, '/buy/<string:stockCode>')
+api.add_resource(getSellingStockPerCode, '/sell/<string:stockCode>')
+api.add_resource(getCurrentStockPerCode, '/current/<string:stockCode>')
