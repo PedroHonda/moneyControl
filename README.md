@@ -12,4 +12,5 @@ April 24th, 2019
 
 _**NOTE**_
 
-- Taking https://github.com/PedroHonda/fuelControl as a template
+- Taking https://github.com/PedroHonda/fuelControl as a template for Flask database management
+- Also using Industrious HTML template available at https://templated.co/industrious
