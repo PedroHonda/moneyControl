@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'webPages.apps.WebpagesConfig',
+    'moneyDatabase.apps.MoneydatabaseConfig',
 ]
 
 MIDDLEWARE = [
