@@ -1,130 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-</head>
-<style>
-* {
-    font-family:            'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size:              100%;
-    -webkit-transition:     all 1s ease-in-out;
-    -moz-transition:        all 1s ease-in-out;
-    -o-transition:          all 1s ease-in-out;
-    -ms-transition:         all 1s ease-in-out;
-    transition:             all 1s ease-in-out;
-    border-radius:          7px;
-}
+{% load static %}
+<!DOCTYPE HTML>
+<!--
+	Industrious by TEMPLATED
+	templated.co @templatedco
+	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+	<head>
+		<title>Money Control</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<meta name="description" content="" />
+		<meta name="keywords" content="" />
+		<link rel="stylesheet" type="text/css" href="{% static 'webPages/css/main.css' %}" />
+	</head>
+	<body class="is-preload">
 
-h3 {
-    font-style:             italic;
-    font-size:              30pt;
-    text-align:             center;
-}
+		<!-- Header -->
+			<header id="header">
+				<a class="logo" href="{% url 'view-home' %}">Back</a>
+				<nav>
+					<a href="#menu">Menu</a>
+				</nav>
+			</header>
 
-h4 {
-    font-size:              20pt;
-}
+		<!-- Nav -->
+			<nav id="menu">
+				<ul class="links">
+					<li><a href="{% url 'view-home' %}">Home</a></li>
+					<li><a href="{% url 'view-settings' %}">Settings</a></li>
+					<li><a href="{% url 'view-stock' %}">Stock</a></li>
+				</ul>
+			</nav>
 
-table {
-    text-align:             center;
-    margin-left:            auto;
-    margin-right:           auto;
-    border-style:           groove;
-    border-width:           1.5pt;
-    border-radius:          15px;
-    padding:                10px; 
-}
+		<!-- Heading -->
+			<div id="heading" >
+				{% if heading %}
+					<h1>{{ heading }}</h1>
+				{% else %}
+					<h1>Money Control</h1>
+				{% endif %}
+			</div>
 
-tr:hover {
-    background-color:     aliceblue;
-}
+			{% block content %}{% endblock %}
 
-th {
-    width:                  10%;
-    background-color:       rgb(127, 182, 255);
-    border-width: 0in;
-}
+		<!-- Footer -->
+			<footer id="footer">
+				<div class="inner">
+					<div class="content">
+						<section>
+							<h3>Accumsan montes viverra</h3>
+							<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing. Lorem ipsum dolor vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing sed feugiat eu faucibus. Integer ac sed amet praesent. Nunc lacinia ante nunc ac gravida.</p>
+						</section>
+						<section>
+							<h4>Sem turpis amet semper</h4>
+							<ul class="alt">
+								<li><a href="#">Dolor pulvinar sed etiam.</a></li>
+								<li><a href="#">Etiam vel lorem sed amet.</a></li>
+								<li><a href="#">Felis enim feugiat viverra.</a></li>
+								<li><a href="#">Dolor pulvinar magna etiam.</a></li>
+							</ul>
+						</section>
+						<section>
+							<h4>Magna sed ipsum</h4>
+							<ul class="plain">
+								<li><a href="#"><i class="icon fa-twitter">&nbsp;</i>Twitter</a></li>
+								<li><a href="#"><i class="icon fa-facebook">&nbsp;</i>Facebook</a></li>
+								<li><a href="#"><i class="icon fa-instagram">&nbsp;</i>Instagram</a></li>
+								<li><a href="#"><i class="icon fa-github">&nbsp;</i>Github</a></li>
+							</ul>
+						</section>
+					</div>
+					<div class="copyright">
+						&copy; Untitled. Photos <a href="https://unsplash.co">Unsplash</a>, Video <a href="https://coverr.co">Coverr</a>.
+					</div>
+				</div>
+			</footer>
 
-input {
-    width:                  100%;
-    text-align:             center;
-    border-width:           0pt;
-}
-input:hover {
-    background-color:     aliceblue;
-}
+		<!-- Scripts -->
+			<script src="{% static 'webPages/js/jquery.min.js' %}"></script>
+			<script src="{% static 'webPages/js/browser.min.js' %}"></script>
+			<script src="{% static 'webPages/js/breakpoints.min.js' %}"></script>
+			<script src="{% static 'webPages/js/util.js' %}"></script>
+			<script src="{% static 'webPages/js/main.js' %}"></script>
 
-.inputOptional {
-    background-color:       rgb(255, 252, 214);
-}
-
-button {
-    background-color:       #4CAF50; /* Green */
-    border:                 none;
-    color:                  white;
-    padding:                6px 32px;
-    text-align:             center;
-    text-decoration:        none;
-    display:                inline-block;
-    font-size:              16px;
-}
-
-.buttonPOST {
-    width:                  100%;
-}
-
-.buttonPUT {
-    width:                  50%;
-    margin-left:            auto;
-    margin-right:           auto;
-    display:                block;
-}
-
-</style>
-<script>
-function httpGET(url, callback) {
-    const http = new XMLHttpRequest();
-    http.open("GET", url, true);
-    http.onreadystatechange=(e)=>{
-        if (http.readyState == 4 && http.status == 200)
-            callback(http.responseText);
-    }
-    http.send();
-}
-
-function httpPOST(url, callback, json) {
-    const http = new XMLHttpRequest();
-    http.open("POST", url, true);
-    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    http.onreadystatechange=(e)=>{
-        if (http.readyState == 4)
-            callback(http.responseText, http.status);
-    }
-    http.send(JSON.stringify(json));
-}
-
-function httpPUT(url, callback, json) {
-    const http = new XMLHttpRequest();
-    http.open("PUT", url, true);
-    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    http.onreadystatechange=(e)=>{
-        if (http.readyState == 4)
-            callback(http.responseText, http.status);
-    }
-    http.send(JSON.stringify(json));  
-}
-</script>
-{% block jscript %}
-{% endblock jscript %}
-<body>
-    <h3>Money Control</h3>
-    <hr>
-    <br>
-
-{% block body_content %}
-
-{% endblock body_content %}
-</body>
+	</body>
 </html>

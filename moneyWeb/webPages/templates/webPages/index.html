@@ -1,188 +1,68 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Fuel Control</title>
-</head>
-<style>
-* {
-    font-family:            'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size:              100%;
-    border-radius:          7px;
-}
-
-h3 {
-    font-style:             italic;
-    font-size:              30pt;
-    text-align:             center;
-}
-
-h4 {
-    font-size:              20pt;
-}
-
-table {
-    text-align:             center;
-    margin-left:            auto;
-    margin-right:           auto;
-    border-style:           groove;
-    border-width:           1.5pt;
-    border-radius:          15px;
-    padding:                10px; 
-}
-
-th {
-    background-color:       rgb(127, 182, 255);
-    border-width: 0in;
-}
-
-.tablesNameClass {
-    width: 500px;
-}
-
-tr:hover {
-    background-color:     aliceblue;
-}
-input {
-    width:                  100%;
-    text-align:             center;
-    border-width:           0pt;
-}
-input:hover {
-    background-color:     aliceblue;
-}
-button {
-    background-color:       #4CAF50; /* Green */
-    border:                 none;
-    color:                  white;
-    padding:                6px 32px;
-    text-align:             center;
-    text-decoration:        none;
-    display:                inline-block;
-    font-size:              16px;
-}
-</style>
-<script>
-var allTables = [];
-
-function httpGET(url, callback) {
-    const http = new XMLHttpRequest();
-    http.open("GET", url, true);
-    http.onreadystatechange=(e)=>{
-        if (http.readyState == 4 && http.status == 200)
-            callback(http.responseText);
-    }
-    http.send();
-}
-
-function httpPOST(url, callback, json) {
-    const http = new XMLHttpRequest();
-    http.open("POST", url, true);
-    http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    http.onreadystatechange=(e)=>{
-        if (http.readyState == 4)
-            callback(http.responseText, http.status);
-    }
-    http.send(JSON.stringify(json));
-}
-
-function httpDELETE(url, callback) {
-    const http = new XMLHttpRequest();
-    http.open("DELETE", url, true);
-    http.onreadystatechange=(e)=>{
-        if (http.readyState == 4 && http.status == 200)
-            callback(http.responseText);
-    }
-    http.send();
-}
-
-function deletingTable(json) {
-    var obj = JSON.parse(json);
-    document.getElementById(obj["Name"]).remove();
-}
-
-function tablesAvailable(json) {
-    var obj = JSON.parse(json);
-    allTables = obj;
-    var li, a, i;
-    for (i = 0; i < obj.length; i++) {
-        li = document.createElement("li");
-        a = document.createElement("a");
-        a.textContent = obj[i];
-        a.setAttribute("href", obj[i] + ".html");
-        li.appendChild(a);
-        document.getElementById("tables").appendChild(li);
-    }
-}
-
-function addRowToAvailableTables(tName) {
-    var tr, td, a, button, text, i, trID;
-    tr = document.createElement("tr");
-    tr.id = tName.toString();
-    trID = tName.toString();
-    td = document.createElement("td");
-    a = document.createElement("a");
-    a.textContent = tName;
-    a.setAttribute("href", tName + ".html");
-    td.appendChild(a);
-    td.classList.add("tablesNameClass");
-    tr.appendChild(td);
-    td = document.createElement("td");
-    button = document.createElement("button");
-    // This is a workaround since on javascript each variable has a lifetime, and if we do a normal function() { script(trID) };
-    // The value of trID for every button created on the loop would be the same (the last one -> obj[obj.length-1])
-    button.onclick = function(arg) { return function() { httpDELETE("http://127.0.0.1:8080/"+arg, deletingTable) }; }(trID);
-    text = document.createTextNode("DEL");
-    button.appendChild(text);
-    td.appendChild(button);
-    tr.appendChild(td);
-    document.getElementById("tablesTable").appendChild(tr);
-}
-
-function updateTablesAvailableTable(json) {
-    var obj = JSON.parse(json);
-    allTables = obj;
-    for (i = 0; i < obj.length; i++) {
-        addRowToAvailableTables(obj[i]);
-    }
-}
-
-function addToLastTablesAvailableTable(response, status) {
-    if (status == 201) {
-        document.getElementById("nameCreateTable").value = "";
-        addRowToAvailableTables(response.toString().replace(/[^a-zA-Z0-9]/g, ""));
-    } else if (status == 409) {
-        alert("There is already a table with this Name");
-    }
-}
-
-function createTable() {
-    var nameTable = document.getElementById("nameCreateTable").value;
-    var json = [];
-    json[0] = nameTable;
-    httpPOST("http://127.0.0.1:8080", addToLastTablesAvailableTable, json);
-}
-
-httpGET("http://127.0.0.1:8080", updateTablesAvailableTable);
-</script>
-<body>
-    <h3>fuelControl</h3>
-    <hr>
-    <table id="tablesTable">
-        <tr><th colspan="2">Tables Available</th></tr>
-    </table>
-    <br>
-    <table>
-        <tr>
-            <th colspan="2">Creating a New Table</th></tr>
-        <tr>
-            <td><input type="text" placeholder="Table's Name" id="nameCreateTable"></td>
-            <td><button onclick="createTable()">CREATE</button></td>
-        </tr>
-    </table>
-    <ul id="tables"></ul>
-    <p>Created by Pedro Honda in September 2018</p>
-</body>
-</html>
+{% extends "webPages/base.html" %}
+{% block content %}
+		<!-- Highlights -->
+			<section class="wrapper">
+				<div class="inner">
+					<header class="special">
+						<h2>Sem turpis amet semper</h2>
+						<p>In arcu accumsan arcu adipiscing accumsan orci ac. Felis id enim aliquet. Accumsan ac integer lobortis commodo ornare aliquet accumsan erat tempus amet porttitor.</p>
+					</header>
+					<div class="highlights">
+						<section>
+							<div class="content">
+								<header>
+									<a href="#" class="icon fa-vcard-o"><span class="label">Icon</span></a>
+									<h3>Feugiat consequat</h3>
+								</header>
+								<p>Nunc lacinia ante nunc ac lobortis ipsum. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus.</p>
+							</div>
+						</section>
+						<section>
+							<div class="content">
+								<header>
+									<a href="#" class="icon fa-files-o"><span class="label">Icon</span></a>
+									<h3>Ante sem integer</h3>
+								</header>
+								<p>Nunc lacinia ante nunc ac lobortis ipsum. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus.</p>
+							</div>
+						</section>
+						<section>
+							<div class="content">
+								<header>
+									<a href="#" class="icon fa-floppy-o"><span class="label">Icon</span></a>
+									<h3>Ipsum consequat</h3>
+								</header>
+								<p>Nunc lacinia ante nunc ac lobortis ipsum. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus.</p>
+							</div>
+						</section>
+						<section>
+							<div class="content">
+								<header>
+									<a href="#" class="icon fa-line-chart"><span class="label">Icon</span></a>
+									<h3>Interdum gravida</h3>
+								</header>
+								<p>Nunc lacinia ante nunc ac lobortis ipsum. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus.</p>
+							</div>
+						</section>
+						<section>
+							<div class="content">
+								<header>
+									<a href="#" class="icon fa-paper-plane-o"><span class="label">Icon</span></a>
+									<h3>Faucibus consequat</h3>
+								</header>
+								<p>Nunc lacinia ante nunc ac lobortis ipsum. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus.</p>
+							</div>
+						</section>
+						<section>
+							<div class="content">
+								<header>
+									<a href="#" class="icon fa-qrcode"><span class="label">Icon</span></a>
+									<h3>Accumsan viverra</h3>
+								</header>
+								<p>Nunc lacinia ante nunc ac lobortis ipsum. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus.</p>
+							</div>
+						</section>
+					</div>
+				</div>
+			</section>
+{% endblock content %}

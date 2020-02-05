@@ -106,3 +106,9 @@ class Taxes(models.Model):
 
     def __str__(self):
         return self.tax_name
+
+class Brokers(models.Model):
+    broker = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.broker
